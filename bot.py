@@ -1,37 +1,17 @@
 import os
 
-import discord
 import unicodedata
+from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD = os.getenv('DISCORD_GUILD')
 
-client = discord.Client()
+bot = commands.Bot(command_prefix='!')
 
-@client.event
-async def on_ready():
-    for guild in client.guilds:
-        if guild.name == GUILD:
-            break
+@bot.command(name='queue', help='Create a new queue.  Add a Dodo Code by adding a space after the command, followed by your Dodo Code.  For example: !queue KR16V')
+async def queue(ctx, code):
+    response = 'Queue created! Dodo Code: ' + code
+    await ctx.send(response)
 
-    print(
-        f'{client.user} is connected to the following guild:\n'
-        f'{guild.name}(id: {guild.id})'
-    )
-
-@client.event
-async def on_message(message):
-    # prevent bot from parsing through its own messages
-    if message.author == client.user:
-        return
-
-    if '!queue' in normalize_string(message.content):
-        await message.channel.send('Queue command entered')
-
-# normalize the incoming string for comparison
-def normalize_string(string):
-    return unicodedata.normalize("NFKD", string.casefold())
-
-client.run(TOKEN)
+bot.run(TOKEN)
