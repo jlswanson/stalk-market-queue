@@ -1,6 +1,7 @@
 import os
 
 import discord
+import unicodedata
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,7 +27,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if '!queue' in message.content.lower():
+    if '!queue' in normalize_string(message.content):
         await message.channel.send('Queue command entered')
 
 # normalize the incoming string for comparison
