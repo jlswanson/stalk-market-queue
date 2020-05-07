@@ -22,12 +22,18 @@ async def create_queue(ctx, code="None"):
     # add the creator to queue
     queue['creator'] = ctx.author
 
-    response = """
+    message = """
     Queue created by {author}!
 
 Dodo Code: **{code}**
     """.format(author=ctx.author.mention, code=queue['dodo_code'].upper())
-    await ctx.send(response)
+
+    # send and pin the queue creation message
+    message_to_pin = await ctx.send(message)
+    await message_to_pin.pin()
+
+    # add pinned message to queue for later
+    queue['pinned_message'] = message_to_pin
 
 @bot.command(name='add', help='Adds a user to the queue.  Call the command to add yourself to the queue, or mention a user to add that user to the queue instead.  For example: !add @TomNook')
 async def add_to_queue(ctx, user: discord.Member = None):
@@ -43,5 +49,16 @@ async def add_to_queue(ctx, user: discord.Member = None):
         queue['members'].append(user)
         response = "{user} has been added to the queue!".format(user=user.mention)
         await ctx.send(response)
+
+        # edit the pinned queue message each time a user gets added
+        await add_member_to_pinned_message(user)
+
+# TODO: this needs to loop through the array of queue members
+async def add_member_to_pinned_message(member):
+    content = """
+    {current}
+{new}
+    """.format(current=queue['pinned_message'].content, new=member.mention)
+    await queue['pinned_message'].edit(content=content)
 
 bot.run(TOKEN)
