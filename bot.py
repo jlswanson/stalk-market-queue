@@ -1,5 +1,6 @@
 import os
 
+import re
 import unicodedata
 import discord
 from discord.ext import commands
@@ -43,7 +44,7 @@ async def add_to_queue(ctx, user: discord.Member = None):
 
     # there will probably be a better way to do this in the future, but this works for now
     if 'creator' not in queue:
-        await ctx.send('Sorry, there\'s no queue to add you to right now!  Use the **!queue** command to start one, or **!help** for a list of commands.')
+        await ctx.send('Sorry, there\'s no queue to add you to right now!  Use the `!queue` command to start one, or `!help` for a list of commands.')
     else:
         # push the user onto the members array
         queue['members'].append(user)
@@ -53,7 +54,38 @@ async def add_to_queue(ctx, user: discord.Member = None):
         # edit the pinned queue message each time a user gets added
         await add_member_to_pinned_message(user)
 
-# TODO: this needs to loop through the array of queue members
+@bot.command(name='next', help='Moves to the next user in the queue.')
+async def next_in_queue(ctx):
+    if queue['members']:
+        queue['members'].pop(0)
+
+    # account for the last member in the queue
+    if not queue['members']:
+        message = "The queue is empty! `!endqueue` will delete this queue, or you can `!add` people to the current queue."
+    else:
+        message = "{next_user}, you're up!".format(next_user=queue['members'][0].mention)
+    await ctx.send(message)
+
+@bot.command(name='endqueue', help='End the currently active queue.')
+async def end_queue(ctx):
+    # unpin message
+    await queue['pinned_message'].unpin()
+
+    # TODO: don't send this if there is no current queue
+    message = "That's a wrap!  {author} has ended the queue.".format(author=ctx.author.mention)
+    await ctx.send(message)
+
+@bot.command(name='dodo', help='Change the Dodo Code for the queue.  Example: !dodo TT43V')
+async def edit_dodo_code(ctx, code):
+    new_code_string = "Dodo Code: **" + code + "**"
+    new_content = re.sub('Dodo Code: .+', new_code_string, queue['pinned_message'].content)
+
+    await queue['pinned_message'].edit(content=new_content)
+
+    message = "Dodo Code updated!"
+    await ctx.send(message)
+
+# add a new member to the queue
 async def add_member_to_pinned_message(member):
     content = """
     {current}
